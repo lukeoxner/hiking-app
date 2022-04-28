@@ -1,1 +1,1 @@
-// Initial file for server
+// Initial server file
