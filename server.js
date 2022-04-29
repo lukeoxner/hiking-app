@@ -8,9 +8,14 @@ const app = express();
 // Connect to the Atlas cloud database
 connectDB();
 
-// Test API route
-app.get('/', (req, res) => res.send('API Running'));
+// Initialize middleware
+app.use(express.json({ extended: false }));
+
+// Define Routes
+app.use('/api/users', require('./routes/api/users'));
+app.use('/api/trails', require('./routes/api/trails'));
+app.use('/api/auth', require('./routes/api/auth'));
 
 const PORT = process.env.PORT || 6000;
 
-app.listen(PORT, () => console.log(`Server spooled up on port ${PORT}`));
+app.listen(PORT, () => console.log(`(1/2) Server spooled up on port ${PORT}`));
