@@ -97,10 +97,10 @@ router.delete('/', auth, async (req, res) => {
 	}
 });
 
-// * @route   PUT api/users/bookmark/:id
+// * @route   PUT api/users/bookmarked/add/:id
 // * @desc    Add a trail to user's bookmarked trails
 // * @access  Private
-router.put('/bookmark/:id', auth, async (req, res) => {
+router.put('/bookmarked/add/:id', auth, async (req, res) => {
 	try {
 		const reqTrail = await Trail.findById(req.params.id);
 		const user = await User.findById(req.user.id).select('-password');
@@ -119,6 +119,43 @@ router.put('/bookmark/:id', auth, async (req, res) => {
 		}
 
 		user.bookmarkedTrails.unshift({ trail: reqTrail.id });
+
+		await user.save();
+
+		res.json(user.bookmarkedTrails);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+});
+
+// * @route   PUT api/users/bookmarked/remove/:id
+// * @desc    Remove a trail from user's bookmarked trails
+// * @access  Private
+router.put('/bookmarked/remove/:id', auth, async (req, res) => {
+	try {
+		const reqTrail = await Trail.findById(req.params.id);
+		const user = await User.findById(req.user.id).select('-password');
+
+		if (!reqTrail) {
+			return res.status(404).json({ msg: 'Trail not found' });
+		}
+
+		// Check if trail has already been bookmarked
+		if (
+			user.bookmarkedTrails.filter(
+				(bookmarkedTrail) => bookmarkedTrail.trail == reqTrail.id
+			).length === 0
+		) {
+			return res.status(400).json({ msg: 'Trail not yet bookmarked' });
+		}
+
+		// Get remove index
+		const removeIndex = user.bookmarkedTrails
+			.map((bookmarkedTrail) => bookmarkedTrail.trail.toString())
+			.indexOf(req.params.id);
+
+		user.bookmarkedTrails.splice(removeIndex, 1);
 
 		await user.save();
 
