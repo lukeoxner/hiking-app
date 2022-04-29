@@ -166,4 +166,73 @@ router.put('/bookmarked/remove/:id', auth, async (req, res) => {
 	}
 });
 
+// * @route   PUT api/users/completed/add/:id
+// * @desc    Add a trail to user's completed trails
+// * @access  Private
+router.put('/completed/add/:id', auth, async (req, res) => {
+	try {
+		const reqTrail = await Trail.findById(req.params.id);
+		const user = await User.findById(req.user.id).select('-password');
+
+		if (!reqTrail) {
+			return res.status(404).json({ msg: 'Trail not found' });
+		}
+
+		// Check if trail has already been completed
+		if (
+			user.completedTrails.filter(
+				(completedTrail) => completedTrail.trail == reqTrail.id
+			).length > 0
+		) {
+			return res.status(400).json({ msg: 'Trail already completed' });
+		}
+
+		user.completedTrails.unshift({ trail: reqTrail.id });
+
+		await user.save();
+
+		res.json(user.completedTrails);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+});
+
+// * @route   PUT api/users/completed/remove/:id
+// * @desc    Remove a trail from user's completed trails
+// * @access  Private
+router.put('/completed/remove/:id', auth, async (req, res) => {
+	try {
+		const reqTrail = await Trail.findById(req.params.id);
+		const user = await User.findById(req.user.id).select('-password');
+
+		if (!reqTrail) {
+			return res.status(404).json({ msg: 'Trail not found' });
+		}
+
+		// Check if trail has already been completed
+		if (
+			user.completedTrails.filter(
+				(completedTrail) => completedTrail.trail == reqTrail.id
+			).length === 0
+		) {
+			return res.status(400).json({ msg: 'Trail not yet completed' });
+		}
+
+		// Get remove index
+		const removeIndex = user.completedTrails
+			.map((completedTrail) => completedTrail.trail.toString())
+			.indexOf(req.params.id);
+
+		user.completedTrails.splice(removeIndex, 1);
+
+		await user.save();
+
+		res.json(user.completedTrails);
+	} catch (err) {
+		console.error(err.message);
+		res.status(500).send('Server Error');
+	}
+});
+
 module.exports = router;
